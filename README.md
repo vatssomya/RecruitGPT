@@ -2,8 +2,6 @@
 
 Welcome to **RecruitGPT**, an AI-powered tool that scans resumes, matches them to job descriptions, and ranks candidates based on relevance using natural language processing (NLP).
 
-This was developed as an **individual Week 2 internship project at DYMRA Tech**, aimed at solving the real-world HR challenge of manual resume filtering.
-
 ---
 
 ## 🔍 Project Overview
