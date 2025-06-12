@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resume Ranking Results - AI Resume Ranker</title>
+    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container py-5">
+        <!-- Header -->
+        <div class="text-center mb-4">
+            <h1 class="display-5 fw-bold text-primary">
+                <i class="fas fa-trophy me-3"></i>
+                Resume Ranking Results
+            </h1>
+            <p class="lead text-muted">
+                Ranked {{ results|length }} candidates out of {{ total_resumes }} uploaded resumes
+            </p>
+        </div>
+
+        <!-- Job Description Summary -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-briefcase me-2"></i>
+                            Job Description Summary
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="job-description-preview">
+                            {{ job_description[:300] }}{% if job_description|length > 300 %}...{% endif %}
+                        </div>
+                        {% if job_description|length > 300 %}
+                        <button class="btn btn-sm btn-outline-secondary mt-2" type="button" data-bs-toggle="collapse" data-bs-target="#fullJobDescription">
+                            <i class="fas fa-eye me-1"></i>
+                            View Full Description
+                        </button>
+                        <div class="collapse mt-3" id="fullJobDescription">
+                            <div class="border-start border-primary ps-3">
+                                {{ job_description }}
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Ranking Statistics -->
+        <div class="row mb-4">
+            <div class="col-md-3 col-sm-6 mb-3">
+                <div class="card bg-primary text-white">
+                    <div class="card-body text-center">
+                        <i class="fas fa-users fa-2x mb-2"></i>
+                        <h4>{{ results|length }}</h4>
+                        <small>Candidates Processed</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6 mb-3">
+                <div class="card bg-success text-white">
+                    <div class="card-body text-center">
+                        <i class="fas fa-star fa-2x mb-2"></i>
+                        <h4>{{ "%.1f"|format(results[0].percentage_score) }}%</h4>
+                        <small>Top Score</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6 mb-3">
+                <div class="card bg-info text-white">
+                    <div class="card-body text-center">
+                        <i class="fas fa-chart-line fa-2x mb-2"></i>
+                        <h4>{{ "%.1f"|format((results|sum(attribute='percentage_score')) / results|length) }}%</h4>
+                        <small>Average Score</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6 mb-3">
+                <div class="card bg-warning text-white">
+                    <div class="card-body text-center">
+                        <i class="fas fa-medal fa-2x mb-2"></i>
+                        <h4>{{ (results|selectattr('percentage_score', '>', 70)|list|length) }}</h4>
+                        <small>Strong Matches (>70%)</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Ranked Results -->
+        <div class="row">
+            <div class="col-12">
+                <h3 class="mb-3">
+                    <i class="fas fa-list-ol me-2"></i>
+                    Ranked Candidates
+                </h3>
+            </div>
+        </div>
+
+        {% for result in results %}
+        <div class="card mb-3 candidate-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center">
+                    <span class="rank-badge me-3">
+                        {% if result.rank == 1 %}
+                            <i class="fas fa-trophy text-warning"></i>
+                        {% elif result.rank == 2 %}
+                            <i class="fas fa-medal text-secondary"></i>
+                        {% elif result.rank == 3 %}
+                            <i class="fas fa-award text-warning"></i>
+                        {% else %}
+                            <span class="badge bg-secondary">#{{ result.rank }}</span>
+                        {% endif %}
+                    </span>
+                    <h5 class="mb-0">{{ result.filename }}</h5>
+                </div>
+                <div class="d-flex align-items-center">
+                    <div class="score-display me-3">
+                        <span class="h4 mb-0 
+                            {% if result.percentage_score >= 80 %}text-success
+                            {% elif result.percentage_score >= 60 %}text-warning
+                            {% else %}text-danger{% endif %}
+                        ">
+                            {{ result.percentage_score }}%
+                        </span>
+                    </div>
+                    <div class="progress score-progress">
+                        <div class="progress-bar 
+                            {% if result.percentage_score >= 80 %}bg-success
+                            {% elif result.percentage_score >= 60 %}bg-warning
+                            {% else %}bg-danger{% endif %}
+                        " 
+                        style="width: {{ result.percentage_score }}%"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-8">
+                        <h6 class="text-muted mb-2">
+                            <i class="fas fa-eye me-1"></i>
+                            Resume Preview
+                        </h6>
+                        <p class="text-muted mb-3 resume-preview">{{ result.text_preview }}</p>
+                        
+                        {% if result.skills %}
+                        <h6 class="text-muted mb-2">
+                            <i class="fas fa-cogs me-1"></i>
+                            Extracted Skills & Keywords
+                        </h6>
+                        <div class="skills-container mb-3">
+                            {% for skill in result.skills %}
+                                <span class="badge bg-primary me-1 mb-1">{{ skill }}</span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4">
+                        <div class="candidate-stats">
+                            <div class="stat-item">
+                                <strong>Match Score:</strong>
+                                <span class="
+                                    {% if result.percentage_score >= 80 %}text-success
+                                    {% elif result.percentage_score >= 60 %}text-warning
+                                    {% else %}text-danger{% endif %}
+                                ">
+                                    {{ result.percentage_score }}%
+                                </span>
+                            </div>
+                            <div class="stat-item">
+                                <strong>Word Count:</strong>
+                                <span>{{ result.word_count }}</span>
+                            </div>
+                            <div class="stat-item">
+                                <strong>Skills Found:</strong>
+                                <span>{{ result.skills|length }}</span>
+                            </div>
+                            <div class="stat-item">
+                                <strong>Ranking:</strong>
+                                <span class="fw-bold">#{{ result.rank }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+
+        <!-- Actions -->
+        <div class="row mt-5">
+            <div class="col-12 text-center">
+                <a href="{{ url_for('index') }}" class="btn btn-primary btn-lg me-3">
+                    <i class="fas fa-plus me-2"></i>
+                    Analyze More Resumes
+                </a>
+                <button class="btn btn-outline-secondary btn-lg" onclick="window.print()">
+                    <i class="fas fa-print me-2"></i>
+                    Print Results
+                </button>
+            </div>
+        </div>
+
+        <!-- Methodology -->
+        <div class="row mt-5">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Ranking Methodology
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-2">
+                            <strong>How scores are calculated:</strong>
+                        </p>
+                        <ul class="mb-0">
+                            <li><strong>Text Preprocessing:</strong> Advanced NLP techniques using spaCy for text normalization and keyword extraction</li>
+                            <li><strong>TF-IDF Vectorization:</strong> Convert job description and resumes into numerical vectors representing word importance</li>
+                            <li><strong>Cosine Similarity:</strong> Calculate mathematical similarity between job requirements and candidate profiles</li>
+                            <li><strong>Skills Extraction:</strong> Identify technical skills, tools, and relevant keywords from resume content</li>
+                            <li><strong>Ranking Algorithm:</strong> Sort candidates by overall similarity score with the job description</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Add print styles
+        window.addEventListener('beforeprint', function() {
+            document.body.classList.add('printing');
+        });
+        
+        window.addEventListener('afterprint', function() {
+            document.body.classList.remove('printing');
+        });
+    </script>
+</body>
+</html>

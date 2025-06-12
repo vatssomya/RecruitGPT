@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI-Powered Resume Ranker</title>
+    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container py-5">
+        <!-- Header -->
+        <div class="text-center mb-5">
+            <h1 class="display-4 fw-bold text-primary">
+                <i class="fas fa-robot me-3"></i>
+                AI-Powered Resume Ranker
+            </h1>
+            <p class="lead text-muted">
+                Automatically match and rank candidates against job descriptions using advanced NLP
+            </p>
+        </div>
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'error' else 'warning' if category == 'warning' else 'success' }} alert-dismissible fade show" role="alert">
+                        <i class="fas fa-{{ 'exclamation-triangle' if category == 'error' else 'exclamation-circle' if category == 'warning' else 'check-circle' }} me-2"></i>
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- Main Form -->
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card shadow-lg">
+                    <div class="card-header bg-primary text-white">
+                        <h3 class="card-title mb-0">
+                            <i class="fas fa-upload me-2"></i>
+                            Upload Job Description & Resumes
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <form action="{{ url_for('upload_files') }}" method="post" enctype="multipart/form-data" id="uploadForm">
+                            <!-- Job Description -->
+                            <div class="mb-4">
+                                <label for="job_description" class="form-label fw-bold">
+                                    <i class="fas fa-briefcase me-2"></i>
+                                    Job Description *
+                                </label>
+                                <textarea 
+                                    class="form-control" 
+                                    id="job_description" 
+                                    name="job_description" 
+                                    rows="6" 
+                                    placeholder="Paste the complete job description here..."
+                                    required
+                                ></textarea>
+                                <div class="form-text">
+                                    Include required skills, qualifications, and responsibilities for best matching results.
+                                </div>
+                            </div>
+
+                            <!-- Resume Files -->
+                            <div class="mb-4">
+                                <label for="resume_files" class="form-label fw-bold">
+                                    <i class="fas fa-file-alt me-2"></i>
+                                    Resume Files *
+                                </label>
+                                <input 
+                                    class="form-control" 
+                                    type="file" 
+                                    id="resume_files" 
+                                    name="resume_files" 
+                                    multiple 
+                                    accept=".pdf,.docx,.txt"
+                                    required
+                                >
+                                <div class="form-text">
+                                    Select multiple resume files. Supported formats: PDF, DOCX, TXT (Max 16MB each)
+                                </div>
+                            </div>
+
+                            <!-- File Preview -->
+                            <div id="filePreview" class="mb-4" style="display: none;">
+                                <h6 class="fw-bold text-muted">Selected Files:</h6>
+                                <div id="fileList" class="list-group"></div>
+                            </div>
+
+                            <!-- Submit Button -->
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-primary btn-lg" id="submitBtn">
+                                    <i class="fas fa-magic me-2"></i>
+                                    Analyze & Rank Resumes
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Features Section -->
+        <div class="row mt-5">
+            <div class="col-12">
+                <h3 class="text-center mb-4">How It Works</h3>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card h-100 border-0 bg-dark">
+                    <div class="card-body text-center">
+                        <i class="fas fa-upload fa-3x text-primary mb-3"></i>
+                        <h5>1. Upload</h5>
+                        <p class="text-muted">Upload job description and multiple resume files</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card h-100 border-0 bg-dark">
+                    <div class="card-body text-center">
+                        <i class="fas fa-brain fa-3x text-success mb-3"></i>
+                        <h5>2. Analyze</h5>
+                        <p class="text-muted">AI processes and extracts key information using NLP</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card h-100 border-0 bg-dark">
+                    <div class="card-body text-center">
+                        <i class="fas fa-sort-amount-down fa-3x text-warning mb-3"></i>
+                        <h5>3. Rank</h5>
+                        <p class="text-muted">Get ranked candidates with similarity scores</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // File preview functionality
+        document.getElementById('resume_files').addEventListener('change', function(e) {
+            const filePreview = document.getElementById('filePreview');
+            const fileList = document.getElementById('fileList');
+            const files = e.target.files;
+
+            if (files.length > 0) {
+                fileList.innerHTML = '';
+                filePreview.style.display = 'block';
+
+                Array.from(files).forEach((file, index) => {
+                    const fileItem = document.createElement('div');
+                    fileItem.className = 'list-group-item d-flex justify-content-between align-items-center';
+                    
+                    const fileInfo = document.createElement('div');
+                    fileInfo.innerHTML = `
+                        <i class="fas fa-file me-2"></i>
+                        <strong>${file.name}</strong>
+                        <small class="text-muted ms-2">(${(file.size / 1024 / 1024).toFixed(2)} MB)</small>
+                    `;
+                    
+                    const fileStatus = document.createElement('span');
+                    fileStatus.className = 'badge bg-success';
+                    fileStatus.textContent = 'Ready';
+                    
+                    fileItem.appendChild(fileInfo);
+                    fileItem.appendChild(fileStatus);
+                    fileList.appendChild(fileItem);
+                });
+            } else {
+                filePreview.style.display = 'none';
+            }
+        });
+
+        // Form submission loading state
+        document.getElementById('uploadForm').addEventListener('submit', function(e) {
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing...';
+            submitBtn.disabled = true;
+        });
+
+        // Validate form before submission
+        document.getElementById('uploadForm').addEventListener('submit', function(e) {
+            const jobDescription = document.getElementById('job_description').value.trim();
+            const resumeFiles = document.getElementById('resume_files').files;
+
+            if (!jobDescription) {
+                e.preventDefault();
+                alert('Please provide a job description.');
+                return;
+            }
+
+            if (resumeFiles.length === 0) {
+                e.preventDefault();
+                alert('Please select at least one resume file.');
+                return;
+            }
+
+            // Check file sizes
+            for (let file of resumeFiles) {
+                if (file.size > 16 * 1024 * 1024) { // 16MB
+                    e.preventDefault();
+                    alert(`File "${file.name}" is too large. Maximum size is 16MB.`);
+                    return;
+                }
+            }
+        });
+    </script>
+</body>
+</html>
