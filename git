@@ -40,3 +40,7 @@ author = "agent"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "uv add spacy scikit-learn PyPDF2 python-docx pdfplumber numpy"
+
+[[ports]]
+localPort = 5000
+externalPort = 80
