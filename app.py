@@ -6,15 +6,12 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from resume_processor import ResumeProcessor
 import traceback
 
-# Configure logging
 logging.basicConfig(level=logging.DEBUG)
 
-# Create the app
 app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET", "dev_secret_key_change_in_production")
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
-# Configuration
 UPLOAD_FOLDER = 'uploads'
 ALLOWED_EXTENSIONS = {'pdf', 'docx', 'txt'}
 MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB max file size
@@ -22,7 +19,6 @@ MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB max file size
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = MAX_CONTENT_LENGTH
 
-# Ensure upload directory exists
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 # Initialize resume processor
